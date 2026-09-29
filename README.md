@@ -77,3 +77,4 @@ cd backend && python -m app.scripts.run_evaluation
 - This is a research and educational wellness prototype.
 - It does not replace professional medical evaluation.
 - Use synthetic demo data only.
+# EvoTwin
