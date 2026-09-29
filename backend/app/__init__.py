@@ -1,0 +1,1 @@
+"""VitaTwin AI backend package."""

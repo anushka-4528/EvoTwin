@@ -1,0 +1,1 @@
+{"dataset_size": {"train": 240, "test": 60, "total": 300}, "mae": 6.5077, "rmse": 7.9382, "r2": 0.7443, "baseline_mae": 12.8124, "baseline_rmse": 15.7433, "note": "Synthetic wellness-index prediction, not medical risk estimation."}

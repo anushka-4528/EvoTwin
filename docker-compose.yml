@@ -1,0 +1,42 @@
+version: '3.9'
+services:
+  mongo:
+    image: mongo:7
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  chroma:
+    image: chromadb/chroma:latest
+    restart: always
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+
+  backend:
+    build: ./backend
+    working_dir: /app
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+      - MONGO_DB_NAME=vitatwin
+      - CHROMA_PERSIST_DIR=/tmp/chroma
+      - DEMO_MODE=true
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+      - chroma
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
+  chroma_data:

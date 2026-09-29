@@ -1,0 +1,79 @@
+# VitaTwin AI
+
+VitaTwin AI is an educational wellness prototype built on an EvoHealthTwin-style framework for personalized health monitoring and predictive wellness.
+
+## Features
+
+- Full-stack FastAPI + React application
+- JWT authentication and MongoDB-backed persistence
+- Digital Twin and hierarchical memory management
+- ACCM, RPE, and RAG pipeline stubs integrated into a demo-capable chat flow
+- Wellness scoring and synthetic ML prediction model
+- Demo fallback when Gemini or embeddings are not configured
+- Docker and local development option
+
+## Local development
+
+1. Create the environment file:
+   ```bash
+   cp .env.example .env
+   ```
+2. Start MongoDB locally on port 27017.
+3. Install backend requirements:
+   ```bash
+   cd backend && python3 -m pip install -r requirements.txt
+   ```
+4. Install frontend dependencies:
+   ```bash
+   cd frontend && npm install
+   ```
+5. Start backend:
+   ```bash
+   cd backend && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+6. Start frontend:
+   ```bash
+   cd frontend && npm run dev -- --host 0.0.0.0 --port 5173
+   ```
+
+## Docker
+
+```bash
+docker compose up --build
+```
+
+## Seed demo data
+
+```bash
+cd backend && python -m app.scripts.seed_demo
+```
+
+## Train ML model
+
+```bash
+cd backend && python -m app.scripts.train_model
+```
+
+## Run tests
+
+```bash
+cd backend && pytest -q
+```
+
+## Research evaluation
+
+```bash
+cd backend && python -m app.scripts.run_evaluation
+```
+
+## URLs
+
+- Frontend: http://localhost:5173
+- FastAPI docs: http://localhost:8000/docs
+- Health check: http://localhost:8000/health
+
+## Important limitations
+
+- This is a research and educational wellness prototype.
+- It does not replace professional medical evaluation.
+- Use synthetic demo data only.
