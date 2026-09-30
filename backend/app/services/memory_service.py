@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from bson import ObjectId
+
 from app.database.connection import get_db
 
 
@@ -56,7 +58,7 @@ async def list_memories(user_id: str, memory_type: Optional[str] = None) -> List
 
 async def delete_memory(user_id: str, memory_id: str) -> None:
     db = get_db()
-    await db.memories.update_one({"_id": memory_id, "user_id": user_id}, {"$set": {"active": False, "updated_at": datetime.utcnow()}})
+    await db.memories.update_one({"_id": ObjectId(memory_id), "user_id": user_id}, {"$set": {"active": False, "updated_at": datetime.utcnow()}})
 
 
 async def approve_memory(user_id: str, memory_id: str) -> Dict[str, Any]:

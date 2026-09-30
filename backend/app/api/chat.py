@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from bson import ObjectId
+from bson.errors import InvalidId
 
 from app.core.security import get_current_user
 from app.database.connection import get_db
@@ -9,6 +11,13 @@ from app.schemas.chat import ChatMessageCreate, ChatResponse, ChatSessionCreate,
 from app.services.ai_demo import demo_chat_response
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+def _session_object_id(session_id: str) -> ObjectId:
+    try:
+        return ObjectId(session_id)
+    except InvalidId as exc:
+        raise HTTPException(status_code=404, detail="Session not found") from exc
 
 
 @router.get("/sessions", response_model=list[ChatSessionOut])
@@ -38,18 +47,23 @@ async def create_session(payload: ChatSessionCreate, current_user: Dict[str, Any
 @router.get("/sessions/{session_id}")
 async def get_session(session_id: str, current_user: Dict[str, Any] = Depends(get_current_user)):
     db = get_db()
-    session = await db.chat_sessions.find_one({"_id": session_id, "user_id": current_user["user_id"]})
-    if not session:
+    session_doc = await db.chat_sessions.find_one({"_id": _session_object_id(session_id), "user_id": current_user["user_id"]})
+    if not session_doc:
         raise HTTPException(status_code=404, detail="Session not found")
+    session = {"id": str(session_doc.pop("_id")), **session_doc}
     messages = []
     async for msg in db.messages.find({"session_id": session_id, "user_id": current_user["user_id"]}).sort("created_at", 1):
-        messages.append({"id": str(msg["_id"]), **msg})
+        messages.append({"id": str(msg.pop("_id")), **msg})
     return {"session": session, "messages": messages}
 
 
 @router.post("/sessions/{session_id}/messages", response_model=ChatResponse)
 async def send_message(session_id: str, payload: ChatMessageCreate, current_user: Dict[str, Any] = Depends(get_current_user)):
     db = get_db()
+    session_object_id = _session_object_id(session_id)
+    session = await db.chat_sessions.find_one({"_id": session_object_id, "user_id": current_user["user_id"]})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
     user_message = {
         "user_id": current_user["user_id"],
         "session_id": session_id,
@@ -69,7 +83,7 @@ async def send_message(session_id: str, payload: ChatMessageCreate, current_user
         "evidence": response["evidence_sources"],
     }
     await db.messages.insert_one(assistant_message)
-    await db.chat_sessions.update_one({"_id": session_id, "user_id": current_user["user_id"]}, {"$set": {"updated_at": datetime.utcnow()}})
+    await db.chat_sessions.update_one({"_id": session_object_id, "user_id": current_user["user_id"]}, {"$set": {"updated_at": datetime.utcnow()}})
     return ChatResponse(**{
         "message": {"id": "assistant-msg", "role": "assistant", "content": response["response_text"], "created_at": datetime.utcnow(), "evidence": response["evidence_sources"]},
         "response_text": response["response_text"],
