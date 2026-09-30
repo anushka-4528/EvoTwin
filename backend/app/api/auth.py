@@ -9,7 +9,15 @@ from bson.errors import InvalidId
 from app.core.config import get_settings
 from app.core.security import create_access_token, get_current_user, hash_password, verify_password
 from app.database.connection import get_db
-from app.schemas.user import TokenResponse, UserCreate, UserLogin, UserOut, UserProfileUpdate
+from app.schemas.user import (
+    OnboardingComplete,
+    PasswordChange,
+    TokenResponse,
+    UserCreate,
+    UserLogin,
+    UserOut,
+    UserProfileUpdate,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -33,12 +41,19 @@ async def register_user(payload: UserCreate):
         "password_hash": hash_password(payload.password),
         "full_name": payload.full_name,
         "age": None,
+        "gender": None,
         "occupation": None,
+        "activity_level": None,
         "goals": [],
         "dietary_preferences": [],
         "activity_preferences": [],
+        "exercise_preferences": [],
+        "preferred_activities": [],
+        "avoided_activities": [],
+        "sleep_hours": None,
         "health_history": None,
         "lifestyle_summary": None,
+        "onboarding_completed": False,
         "created_at": datetime.utcnow(),
     }
     result = await db.users.insert_one(user_doc)
@@ -46,7 +61,7 @@ async def register_user(payload: UserCreate):
 
     twin = {
         "user_id": str(created["_id"]),
-        "profile": {"email": created["email"], "full_name": created["full_name"]},
+        "profile": {key: value for key, value in created.items() if key not in {"_id", "password_hash", "created_at"}},
         "goals": [],
         "long_term_memories": [],
         "session_memories": [],
@@ -67,6 +82,8 @@ async def login_user(payload: UserLogin):
     user = await db.users.find_one({"email": payload.email.lower()})
     if not user or not verify_password(payload.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
+    if "onboarding_completed" not in user:
+        user["onboarding_completed"] = bool(user.get("age") is not None and user.get("goals"))
     token = create_access_token(str(user["_id"]))
     return TokenResponse(access_token=token, user=UserOut(**{**user, "id": str(user["_id"])}) )
 
@@ -91,7 +108,117 @@ async def update_me(payload: UserProfileUpdate, current_user: Dict[str, Any] = D
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
     user = await db.users.find_one({"_id": user_id})
+    twin = await db.digital_twins.find_one({"user_id": current_user["user_id"]})
+    if twin:
+        profile = {**twin.get("profile", {}), **{key: value for key, value in update_data.items() if key != "goals"}}
+        goals = update_data.get("goals", twin.get("goals", []))
+        await db.digital_twins.update_one(
+            {"_id": twin["_id"]},
+            {"$set": {"profile": profile, "goals": goals, "updated_at": datetime.utcnow(), "version": twin.get("version", 1) + 1}},
+        )
+        await db.twin_history.insert_one({
+            "user_id": current_user["user_id"],
+            "event_type": "profile_updated",
+            "summary": "Personal wellness profile updated.",
+            "created_at": datetime.utcnow(),
+        })
     return UserOut(**{**user, "id": str(user["_id"])})
+
+
+@router.post("/onboarding", response_model=UserOut)
+async def complete_onboarding(payload: OnboardingComplete, current_user: Dict[str, Any] = Depends(get_current_user)):
+    db = get_db()
+    user_id = _user_object_id(current_user["user_id"])
+    user_id_text = current_user["user_id"]
+    onboarding_data = payload.model_dump()
+    onboarding_data["activity_preferences"] = payload.preferred_activities
+    onboarding_data["onboarding_completed"] = True
+    result = await db.users.update_one({"_id": user_id}, {"$set": onboarding_data})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    twin = await db.digital_twins.find_one({"user_id": user_id_text})
+    if not twin:
+        twin = {
+            "user_id": user_id_text,
+            "created_at": datetime.utcnow(),
+            "version": 0,
+            "long_term_memories": [],
+            "session_memories": [],
+        }
+        inserted = await db.digital_twins.insert_one(twin)
+        twin["_id"] = inserted.inserted_id
+    profile = {key: value for key, value in onboarding_data.items() if key not in {"goals", "onboarding_completed"}}
+    await db.digital_twins.update_one(
+        {"_id": twin["_id"]},
+        {"$set": {
+            "profile": profile,
+            "goals": payload.goals,
+            "onboarding_completed": True,
+            "updated_at": datetime.utcnow(),
+            "version": twin.get("version", 0) + 1,
+        }},
+    )
+
+    now = datetime.utcnow()
+    await db.memories.update_many(
+        {"user_id": user_id_text, "source": "onboarding", "active": True},
+        {"$set": {"active": False, "updated_at": now}},
+    )
+    memory_items = [
+        {"category": "goal", "content": goal}
+        for goal in payload.goals
+    ]
+    memory_items.extend(
+        {"category": category, "content": value}
+        for category, values in (
+            ("dietary_preference", payload.dietary_preferences),
+            ("exercise_preference", payload.exercise_preferences),
+            ("preferred_activity", payload.preferred_activities),
+            ("avoided_activity", payload.avoided_activities),
+        )
+        for value in values
+    )
+    if payload.activity_level:
+        memory_items.append({"category": "activity_level", "content": payload.activity_level})
+    if payload.sleep_hours is not None:
+        memory_items.append({"category": "sleep_preference", "content": f"Typical sleep: {payload.sleep_hours} hours"})
+    if payload.lifestyle_summary:
+        memory_items.append({"category": "lifestyle", "content": payload.lifestyle_summary})
+    await db.memories.insert_many([
+        {
+            "user_id": user_id_text,
+            **item,
+            "memory_type": "long_term",
+            "source": "onboarding",
+            "confidence": 1.0,
+            "importance": 0.9,
+            "active": True,
+            "created_at": now,
+            "updated_at": now,
+            "expires_at": None,
+        }
+        for item in memory_items
+    ])
+    await db.twin_history.insert_one({
+        "user_id": user_id_text,
+        "event_type": "onboarding_completed",
+        "summary": "Your profile and saved preferences were set up.",
+        "created_at": datetime.utcnow(),
+    })
+    user = await db.users.find_one({"_id": user_id})
+    return UserOut(**{**user, "id": str(user["_id"])})
+
+
+@router.post("/change-password")
+async def change_password(payload: PasswordChange, current_user: Dict[str, Any] = Depends(get_current_user)):
+    db = get_db()
+    user_id = _user_object_id(current_user["user_id"])
+    user = await db.users.find_one({"_id": user_id})
+    if not user or not verify_password(payload.current_password, user["password_hash"]):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    await db.users.update_one({"_id": user_id}, {"$set": {"password_hash": hash_password(payload.new_password)}})
+    return {"status": "password_changed"}
 
 
 @router.delete("/me")
@@ -105,4 +232,5 @@ async def delete_me(current_user: Dict[str, Any] = Depends(get_current_user)):
     await db.messages.delete_many({"user_id": current_user["user_id"]})
     await db.feedback.delete_many({"user_id": current_user["user_id"]})
     await db.recommendations.delete_many({"user_id": current_user["user_id"]})
+    await db.twin_history.delete_many({"user_id": current_user["user_id"]})
     return {"status": "deleted"}

@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    app_name: str = "VitaTwin AI"
+    app_name: str = "EvoTwin"
     api_prefix: str = "/api"
     environment: str = "development"
     jwt_secret_key: str = Field(default_factory=lambda: os.getenv("JWT_SECRET_KEY", "dev-secret-key"))

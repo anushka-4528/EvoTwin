@@ -1,11 +1,16 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
 
 class ChatMessageCreate(BaseModel):
     content: str = Field(min_length=1)
+
+
+class ChatFeedbackCreate(BaseModel):
+    rating: Literal["helpful", "not_helpful"]
+    correction: Optional[str] = None
 
 
 class ChatSessionCreate(BaseModel):
@@ -18,6 +23,7 @@ class ChatMessageOut(BaseModel):
     content: str
     created_at: datetime
     evidence: List[Dict[str, Any]] = []
+    context_used: List[Dict[str, Any]] = []
 
 
 class ChatSessionOut(BaseModel):
@@ -38,3 +44,4 @@ class ChatResponse(BaseModel):
     uncertainty: str
     safety_notice: str
     follow_up_question: Optional[str] = None
+    context_used: List[Dict[str, Any]] = []
