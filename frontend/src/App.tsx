@@ -1,5 +1,21 @@
 import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
-import { Activity, BrainCircuit, HeartPulse, MoonStar, Sparkles } from 'lucide-react'
+import {
+  Activity,
+  ArrowRight,
+  BellDot,
+  BrainCircuit,
+  Clock3,
+  Droplets,
+  Dumbbell,
+  Gauge,
+  HeartPulse,
+  MoonStar,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  TrendingUp,
+} from 'lucide-react'
+import './App.css'
 
 const navItems = [
   { to: '/', label: 'Home' },
@@ -14,25 +30,26 @@ const navItems = [
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-slate-50 text-slate-900">
-        <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-sky-600 p-2 text-white">
-                <HeartPulse className="h-5 w-5" />
+      <div className="app-shell">
+        <header className="topbar">
+          <div className="topbar-inner">
+            <div className="brand-wrap">
+              <div className="brand-icon">
+                <HeartPulse size={20} />
               </div>
               <div>
-                <div className="text-lg font-semibold">VitaTwin AI</div>
-                <div className="text-xs text-slate-500">Educational wellness prototype</div>
+                <div className="brand-name">VitaTwin AI</div>
+                <div className="brand-tag">Digital wellness companion</div>
               </div>
             </div>
-            <nav className="hidden gap-3 md:flex">
+
+            <nav className="nav-list" aria-label="Main navigation">
               {navItems.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `rounded-full px-3 py-2 text-sm font-medium ${isActive ? 'bg-sky-100 text-sky-800' : 'text-slate-600 hover:bg-slate-100'}`
+                    `nav-link ${isActive ? 'nav-link-active' : ''}`
                   }
                 >
                   {item.label}
@@ -42,7 +59,7 @@ function App() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl p-4 md:p-8">
+        <main className="main-content">
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<AuthPage />} />
@@ -60,61 +77,106 @@ function App() {
 
 function LandingPage() {
   return (
-    <div className="space-y-8">
-      <section className="grid gap-8 rounded-3xl bg-gradient-to-br from-sky-900 via-sky-700 to-cyan-600 p-8 text-white shadow-xl md:grid-cols-2 md:p-12">
-        <div className="space-y-5">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm">
-            <Sparkles className="h-4 w-4" /> EvoHealthTwin research framework
-          </div>
-          <h1 className="text-4xl font-bold md:text-6xl">VitaTwin AI</h1>
-          <p className="max-w-xl text-sky-100">
-            An intelligent digital twin framework for personalized health monitoring and predictive wellness. This project uses synthetic demo data and responsible guidance to support educational wellness insights.
+    <div className="page-stack">
+      <section className="hero-panel">
+        <div className="hero-copy">
+          <span className="eyebrow">
+            <Sparkles size={14} /> EvoHealthTwin research framework
+          </span>
+          <h1>Wellness intelligence designed around your life.</h1>
+          <p>
+            Explore a personalized digital twin for health, behavior, and recovery.
+            VitaTwin blends adaptive memory, wellness signals, and guided coaching
+            to help users build better routines with confidence.
           </p>
-          <div className="flex gap-3">
-            <a href="/auth" className="rounded-xl bg-white px-4 py-3 font-semibold text-sky-700">Register</a>
-            <a href="/auth" className="rounded-xl border border-white/40 px-4 py-3 font-semibold text-white">Sign in</a>
+
+          <div className="cta-row">
+            <NavLink to="/auth" className="primary-btn">
+              Get started <ArrowRight size={18} />
+            </NavLink>
+            <NavLink to="/dashboard" className="secondary-btn">
+              View dashboard
+            </NavLink>
           </div>
-          <p className="text-sm text-sky-100">This is a research and educational wellness prototype, not clinical diagnosis.</p>
+
+          <div className="mini-legend">
+            <span>
+              <ShieldCheck size={14} /> Responsible prototype
+            </span>
+            <span>
+              <BrainCircuit size={14} /> Adaptive model
+            </span>
+          </div>
         </div>
-        <div className="grid gap-4">
-          <MetricCard icon={<BrainCircuit />} title="Digital Twin" value="Adaptive memory" detail="Long-term and session-aware" />
-          <MetricCard icon={<Activity />} title="Dynamic context" value="ACCM" detail="Relevance ranking and structured context" />
-          <MetricCard icon={<MoonStar />} title="Responsible AI" value="RPE + RAG" detail="Evidence-first wellness guidance" />
+
+        <div className="hero-visual">
+          <MetricCard
+            icon={<BrainCircuit size={20} />}
+            title="Digital Twin"
+            value="Adaptive memory"
+            detail="Context-aware and habit-aware profile"
+          />
+          <MetricCard
+            icon={<Activity size={20} />}
+            title="Daily rhythm"
+            value="78 / 100"
+            detail="Sustainable performance index"
+          />
+          <MetricCard
+            icon={<MoonStar size={20} />}
+            title="Responsible AI"
+            value="RPE + RAG"
+            detail="Evidence-backed wellness prompts"
+          />
         </div>
       </section>
-    </div>
-  )
-}
 
-function MetricCard({ icon, title, value, detail }: { icon: React.ReactNode; title: string; value: string; detail: string }) {
-  return (
-    <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
-      <div className="mb-3 inline-flex rounded-lg bg-white/10 p-2">{icon}</div>
-      <div className="text-sm text-sky-100">{title}</div>
-      <div className="mt-1 text-xl font-semibold">{value}</div>
-      <div className="text-sm text-sky-200">{detail}</div>
+      <section className="feature-grid">
+        <FeatureCard
+          icon={<Target size={18} />}
+          title="Goal-focused planning"
+          description="Turn health data into personalized, realistic recommendations for recovery, movement, and focus."
+        />
+        <FeatureCard
+          icon={<TrendingUp size={18} />}
+          title="Behavior forecasting"
+          description="Use synthetic signals to spot changes in sleep, activity, and stress before they become patterns."
+        />
+        <FeatureCard
+          icon={<BellDot size={18} />}
+          title="Daily guidance"
+          description="Deliver lightweight nudges and weekly check-ins with context rooted in the user’s routine."
+        />
+      </section>
     </div>
   )
 }
 
 function AuthPage() {
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <h2 className="mb-4 text-2xl font-semibold">Create account</h2>
-        <form className="space-y-4">
-          <input className="w-full rounded-xl border border-slate-200 p-3" placeholder="Full name" />
-          <input className="w-full rounded-xl border border-slate-200 p-3" placeholder="Email" />
-          <input type="password" className="w-full rounded-xl border border-slate-200 p-3" placeholder="Password" />
-          <button className="w-full rounded-xl bg-sky-600 px-4 py-3 font-semibold text-white">Register</button>
+    <div className="auth-grid">
+      <div className="panel auth-panel">
+        <p className="panel-kicker">Create account</p>
+        <h2>Welcome to your wellness space</h2>
+        <form className="stacked-form">
+          <input placeholder="Full name" />
+          <input placeholder="Email address" />
+          <input type="password" placeholder="Password" />
+          <button type="button" className="primary-btn wide-btn">
+            Start your profile
+          </button>
         </form>
       </div>
-      <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <h2 className="mb-4 text-2xl font-semibold">Sign in</h2>
-        <form className="space-y-4">
-          <input className="w-full rounded-xl border border-slate-200 p-3" placeholder="Email" />
-          <input type="password" className="w-full rounded-xl border border-slate-200 p-3" placeholder="Password" />
-          <button className="w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white">Login</button>
+
+      <div className="panel auth-panel">
+        <p className="panel-kicker">Sign in</p>
+        <h2>Continue your journey</h2>
+        <form className="stacked-form">
+          <input placeholder="Email address" />
+          <input type="password" placeholder="Password" />
+          <button type="button" className="secondary-btn wide-btn">
+            Access dashboard
+          </button>
         </form>
       </div>
     </div>
@@ -123,16 +185,41 @@ function AuthPage() {
 
 function DashboardPage() {
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatBox label="Wellness Index" value="78 / 100" sub="Complete" />
-        <StatBox label="Sleep" value="7.4h" sub="Average" />
-        <StatBox label="Activity" value="8,500" sub="Steps" />
+    <div className="page-stack">
+      <div className="stats-grid">
+        <StatBox label="Wellness Index" value="78 / 100" sub="Strong recovery" />
+        <StatBox label="Sleep" value="7.4h" sub="Avg. nightly" />
+        <StatBox label="Activity" value="8,500" sub="Daily steps" />
         <StatBox label="Stress" value="32" sub="Low-medium" />
       </div>
-      <div className="grid gap-6 md:grid-cols-2">
-        <Panel title="Recent trend">Placeholder chart data</Panel>
-        <Panel title="Recent recommendations">- Build a flexible evening routine\n- Keep hydration consistent</Panel>
+
+      <div className="content-grid two-up">
+        <Panel title="Recovery trend">
+          <div className="line-chart">
+            <span className="point p1" />
+            <span className="point p2" />
+            <span className="point p3" />
+            <span className="point p4" />
+            <span className="point p5" />
+          </div>
+        </Panel>
+
+        <Panel title="Daily focus">
+          <div className="list-block">
+            <div className="check-item">
+              <Clock3 size={16} />
+              <span>Schedule a 20-minute mobility block after lunch.</span>
+            </div>
+            <div className="check-item">
+              <Droplets size={16} />
+              <span>Hydration is trending below your target for 2 days.</span>
+            </div>
+            <div className="check-item">
+              <Dumbbell size={16} />
+              <span>Training load is stable and recovery is supportive.</span>
+            </div>
+          </div>
+        </Panel>
       </div>
     </div>
   )
@@ -140,26 +227,37 @@ function DashboardPage() {
 
 function ChatPage() {
   return (
-    <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
-      <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">AI wellness assistant</h2>
-          <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">Demo mode</span>
+    <div className="content-grid two-up chat-layout">
+      <div className="panel chat-panel">
+        <div className="panel-header-row">
+          <div>
+            <p className="panel-kicker">AI assistant</p>
+            <h2>Wellness coach</h2>
+          </div>
+          <span className="status-pill">Demo mode</span>
         </div>
-        <div className="space-y-3 rounded-2xl bg-slate-50 p-4">
-          <div className="rounded-xl bg-white p-3 text-slate-700">I’m scheduling around college and I need a sustainable exercise plan.</div>
-          <div className="rounded-xl bg-sky-100 p-3 text-sky-900">A later-in-the-day movement routine may fit your schedule better than a strict morning workout.</div>
+
+        <div className="message-stream">
+          <div className="bubble bubble-user">
+            I am overloaded with classwork and need a sustainable fitness plan.
+          </div>
+          <div className="bubble bubble-ai">
+            Your schedule suggests a lighter morning routine and a 20-minute evening
+            recovery session might work better than pushing intensity.
+          </div>
         </div>
-        <div className="mt-4 flex gap-2">
-          <input className="flex-1 rounded-xl border border-slate-200 p-3" placeholder="Ask about sleep, activity, stress, or routines" />
-          <button className="rounded-xl bg-sky-600 px-4 py-3 font-semibold text-white">Send</button>
+
+        <div className="composer">
+          <input placeholder="Ask about sleep, stress, or habits" />
+          <button className="primary-btn">Send</button>
         </div>
       </div>
+
       <Panel title="Evidence and context">
-        <ul className="list-disc space-y-2 pl-5 text-sm text-slate-600">
-          <li>Retrieved insight: sleep consistency supports better recovery.</li>
-          <li>Reasoning: schedule constraint affects exercise timing.</li>
-          <li>Safety: general wellness guidance only.</li>
+        <ul className="bullet-list">
+          <li>Sleep consistency supports better recovery capacity.</li>
+          <li>Stress variability suggests a shorter training window.</li>
+          <li>Recommendations remain educational and non-clinical.</li>
         </ul>
       </Panel>
     </div>
@@ -168,17 +266,24 @@ function ChatPage() {
 
 function HealthPage() {
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <Panel title="Add wellness log">
-        <form className="space-y-4">
-          <input className="w-full rounded-xl border border-slate-200 p-3" placeholder="Sleep hours" />
-          <input className="w-full rounded-xl border border-slate-200 p-3" placeholder="Steps" />
-          <input className="w-full rounded-xl border border-slate-200 p-3" placeholder="Hydration (L)" />
-          <button className="w-full rounded-xl bg-sky-600 px-4 py-3 font-semibold text-white">Save log</button>
+    <div className="content-grid two-up">
+      <Panel title="Log daily wellness">
+        <form className="stacked-form compact-form">
+          <input placeholder="Sleep hours" />
+          <input placeholder="Steps" />
+          <input placeholder="Hydration (L)" />
+          <button type="button" className="primary-btn wide-btn">
+            Save entry
+          </button>
         </form>
       </Panel>
-      <Panel title="Wellness Index methodology">
-        <p className="text-sm text-slate-600">The index is a project-defined wellness indicator. It combines sleep, hydration, activity, stress, and nutrition into a normalized score. Missing data lowers completeness and the result is marked incomplete.</p>
+
+      <Panel title="Methodology">
+        <div className="text-copy">
+          The wellness index blends sleep, hydration, movement, and stress into a
+          normalized score. Missing data reduces confidence, while a consistent trend
+          improves the twin’s understanding of your patterns.
+        </div>
       </Panel>
     </div>
   )
@@ -186,42 +291,103 @@ function HealthPage() {
 
 function InsightsPage() {
   return (
-    <div className="space-y-6">
-      <Panel title="Historical wellness trend">Synthetic chart area</Panel>
-      <Panel title="What-if simulator">Adjust sleep, steps, hydration, and stress to estimate the model output.</Panel>
+    <div className="page-stack">
+      <div className="content-grid two-up">
+        <Panel title="Historical trend">
+          <div className="insight-box">
+            <Gauge size={18} />
+            <span>Wellness consistency improved by 12% over the last 14 days.</span>
+          </div>
+        </Panel>
+
+        <Panel title="What-if simulator">
+          <div className="text-copy">
+            Adjust sleep, hydration, and stress to preview a likely wellness outcome.
+            The model shows the strongest gains from sleep quality and routine stability.
+          </div>
+        </Panel>
+      </div>
     </div>
   )
 }
 
 function SettingsPage() {
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-      <h2 className="mb-4 text-2xl font-semibold">Privacy and settings</h2>
-      <ul className="space-y-3 text-slate-600">
-        <li>Export your data</li>
-        <li>Manage memory visibility</li>
-        <li>Delete account and associated records</li>
-        <li>Review the educational prototype notice</li>
-      </ul>
+    <div className="panel settings-panel">
+      <p className="panel-kicker">Privacy & settings</p>
+      <h2>Control your twin</h2>
+      <div className="settings-list">
+        <div className="setting-row">
+          <span>Export health history</span>
+          <button type="button" className="ghost-btn">Export</button>
+        </div>
+        <div className="setting-row">
+          <span>Manage memory visibility</span>
+          <button type="button" className="ghost-btn">Manage</button>
+        </div>
+        <div className="setting-row">
+          <span>Delete account data</span>
+          <button type="button" className="ghost-btn danger">Delete</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MetricCard({
+  icon,
+  title,
+  value,
+  detail,
+}: {
+  icon: React.ReactNode
+  title: string
+  value: string
+  detail: string
+}) {
+  return (
+    <div className="metric-card">
+      <div className="metric-icon">{icon}</div>
+      <div className="metric-title">{title}</div>
+      <div className="metric-value">{value}</div>
+      <div className="metric-detail">{detail}</div>
+    </div>
+  )
+}
+
+function FeatureCard({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode
+  title: string
+  description: string
+}) {
+  return (
+    <div className="feature-card">
+      <div className="feature-icon">{icon}</div>
+      <h3>{title}</h3>
+      <p>{description}</p>
     </div>
   )
 }
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-      <h3 className="mb-4 text-xl font-semibold">{title}</h3>
-      <div className="text-slate-600">{children}</div>
+    <div className="panel">
+      <h3>{title}</h3>
+      {children}
     </div>
   )
 }
 
 function StatBox({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-      <div className="text-sm text-slate-500">{label}</div>
-      <div className="mt-2 text-3xl font-bold">{value}</div>
-      <div className="text-sm text-slate-500">{sub}</div>
+    <div className="stat-box">
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value}</div>
+      <div className="stat-sub">{sub}</div>
     </div>
   )
 }

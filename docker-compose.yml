@@ -1,5 +1,7 @@
 version: '3.9'
+
 services:
+
   mongo:
     image: mongo:7
     restart: always
@@ -25,7 +27,7 @@ services:
       - CHROMA_PERSIST_DIR=/tmp/chroma
       - DEMO_MODE=true
     ports:
-      - "8000:8000"
+      - "8002:8000"
     depends_on:
       - mongo
       - chroma
