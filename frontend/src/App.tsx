@@ -1,25 +1,17 @@
-import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { BrowserRouter, Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
 import {
-  Activity,
   ArrowRight,
-  BellDot,
-  BrainCircuit,
   Clock3,
   Droplets,
   Dumbbell,
   Gauge,
   HeartPulse,
-  MoonStar,
-  ShieldCheck,
-  Sparkles,
-  Target,
-  TrendingUp,
+  LogOut,
 } from 'lucide-react'
 import './App.css'
 
 const navItems = [
-  { to: '/', label: 'Home' },
-  { to: '/auth', label: 'Auth' },
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/chat', label: 'AI Assistant' },
   { to: '/health', label: 'Health Journal' },
@@ -27,158 +19,214 @@ const navItems = [
   { to: '/settings', label: 'Settings' },
 ]
 
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8002/api'
+const AUTH_TOKEN_KEY = 'vitatwin_access_token'
+
 function App() {
+  const [accessToken, setAccessToken] = useState(() => localStorage.getItem(AUTH_TOKEN_KEY))
+
+  const handleAuthenticated = (token: string) => {
+    localStorage.setItem(AUTH_TOKEN_KEY, token)
+    setAccessToken(token)
+  }
+
+  const handleSignOut = () => {
+    localStorage.removeItem(AUTH_TOKEN_KEY)
+    setAccessToken(null)
+  }
+
   return (
     <BrowserRouter>
-      <div className="app-shell">
-        <header className="topbar">
-          <div className="topbar-inner">
-            <div className="brand-wrap">
-              <div className="brand-icon">
-                <HeartPulse size={20} />
-              </div>
-              <div>
-                <div className="brand-name">VitaTwin AI</div>
-                <div className="brand-tag">Digital wellness companion</div>
-              </div>
-            </div>
-
-            <nav className="nav-list" aria-label="Main navigation">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `nav-link ${isActive ? 'nav-link-active' : ''}`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-            </nav>
-          </div>
-        </header>
-
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/health" element={<HealthPage />} />
-            <Route path="/insights" element={<InsightsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Routes>
-        </main>
-      </div>
+      <Routes>
+        <Route
+          path="/auth"
+          element={accessToken
+            ? <Navigate to="/dashboard" replace />
+            : <AuthPage onAuthenticated={handleAuthenticated} />}
+        />
+        <Route
+          path="/*"
+          element={accessToken
+            ? <AuthenticatedApp onSignOut={handleSignOut} />
+            : <Navigate to="/auth" replace />}
+        />
+      </Routes>
     </BrowserRouter>
   )
 }
 
-function LandingPage() {
+function AuthenticatedApp({ onSignOut }: { onSignOut: () => void }) {
   return (
-    <div className="page-stack">
-      <section className="hero-panel">
-        <div className="hero-copy">
-          <span className="eyebrow">
-            <Sparkles size={14} /> EvoHealthTwin research framework
-          </span>
-          <h1>Wellness intelligence designed around your life.</h1>
-          <p>
-            Explore a personalized digital twin for health, behavior, and recovery.
-            VitaTwin blends adaptive memory, wellness signals, and guided coaching
-            to help users build better routines with confidence.
-          </p>
-
-          <div className="cta-row">
-            <NavLink to="/auth" className="primary-btn">
-              Get started <ArrowRight size={18} />
-            </NavLink>
-            <NavLink to="/dashboard" className="secondary-btn">
-              View dashboard
-            </NavLink>
+    <div className="app-shell">
+      <header className="topbar">
+        <div className="topbar-inner">
+          <div className="brand-wrap">
+            <div className="brand-icon">
+              <HeartPulse size={20} />
+            </div>
+            <div>
+              <div className="brand-name">VitaTwin AI</div>
+              <div className="brand-tag">Digital wellness companion</div>
+            </div>
           </div>
 
-          <div className="mini-legend">
-            <span>
-              <ShieldCheck size={14} /> Responsible prototype
-            </span>
-            <span>
-              <BrainCircuit size={14} /> Adaptive model
-            </span>
-          </div>
+          <nav className="nav-list" aria-label="Main navigation">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  `nav-link ${isActive ? 'nav-link-active' : ''}`
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+            <button type="button" className="sign-out-btn" onClick={onSignOut}>
+              <LogOut size={16} /> Sign out
+            </button>
+          </nav>
         </div>
+      </header>
 
-        <div className="hero-visual">
-          <MetricCard
-            icon={<BrainCircuit size={20} />}
-            title="Digital Twin"
-            value="Adaptive memory"
-            detail="Context-aware and habit-aware profile"
-          />
-          <MetricCard
-            icon={<Activity size={20} />}
-            title="Daily rhythm"
-            value="78 / 100"
-            detail="Sustainable performance index"
-          />
-          <MetricCard
-            icon={<MoonStar size={20} />}
-            title="Responsible AI"
-            value="RPE + RAG"
-            detail="Evidence-backed wellness prompts"
-          />
-        </div>
-      </section>
-
-      <section className="feature-grid">
-        <FeatureCard
-          icon={<Target size={18} />}
-          title="Goal-focused planning"
-          description="Turn health data into personalized, realistic recommendations for recovery, movement, and focus."
-        />
-        <FeatureCard
-          icon={<TrendingUp size={18} />}
-          title="Behavior forecasting"
-          description="Use synthetic signals to spot changes in sleep, activity, and stress before they become patterns."
-        />
-        <FeatureCard
-          icon={<BellDot size={18} />}
-          title="Daily guidance"
-          description="Deliver lightweight nudges and weekly check-ins with context rooted in the user’s routine."
-        />
-      </section>
+      <main className="main-content">
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/health" element={<HealthPage />} />
+          <Route path="/insights" element={<InsightsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </main>
     </div>
   )
 }
 
-function AuthPage() {
-  return (
-    <div className="auth-grid">
-      <div className="panel auth-panel">
-        <p className="panel-kicker">Create account</p>
-        <h2>Welcome to your wellness space</h2>
-        <form className="stacked-form">
-          <input placeholder="Full name" />
-          <input placeholder="Email address" />
-          <input type="password" placeholder="Password" />
-          <button type="button" className="primary-btn wide-btn">
-            Start your profile
-          </button>
-        </form>
-      </div>
+function AuthPage({ onAuthenticated }: { onAuthenticated: (token: string) => void }) {
+  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const navigate = useNavigate()
 
-      <div className="panel auth-panel">
-        <p className="panel-kicker">Sign in</p>
-        <h2>Continue your journey</h2>
-        <form className="stacked-form">
-          <input placeholder="Email address" />
-          <input type="password" placeholder="Password" />
-          <button type="button" className="secondary-btn wide-btn">
-            Access dashboard
-          </button>
-        </form>
-      </div>
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError('')
+    setIsSubmitting(true)
+
+    const formData = new FormData(event.currentTarget)
+    const payload = {
+      email: String(formData.get('email')),
+      password: String(formData.get('password')),
+      ...(mode === 'register' ? { full_name: String(formData.get('full_name')) } : {}),
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/${mode}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const result = await response.json() as { access_token?: string; detail?: string }
+
+      if (!response.ok) {
+        throw new Error(result.detail ?? 'Unable to authenticate. Please try again.')
+      }
+      if (!result.access_token) {
+        throw new Error('The server did not return an access token.')
+      }
+
+      onAuthenticated(result.access_token)
+      navigate('/dashboard', { replace: true })
+    } catch (requestError) {
+      setError(requestError instanceof Error
+        ? requestError.message
+        : 'Unable to reach the server. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="auth-screen">
+      <aside className="auth-story">
+        <div className="auth-brand">
+          <span className="auth-brand-icon"><HeartPulse size={21} /></span>
+          <span>VitaTwin <strong>AI</strong></span>
+        </div>
+        <div className="auth-story-copy">
+          <p className="auth-kicker">Your wellness, in context</p>
+          <h1>A healthier rhythm starts with understanding.</h1>
+          <p>Sign in to continue to your personal wellness companion.</p>
+        </div>
+        <div className="auth-story-footer">Private by design <span aria-hidden="true">·</span> Built around you</div>
+      </aside>
+
+      <section className="auth-form-wrap" aria-labelledby="auth-heading">
+        <div className="auth-form-content">
+          <div className="auth-mode-switch" role="tablist" aria-label="Account access">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'login'}
+              className={mode === 'login' ? 'auth-mode-active' : ''}
+              onClick={() => { setMode('login'); setError('') }}
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'register'}
+              className={mode === 'register' ? 'auth-mode-active' : ''}
+              onClick={() => { setMode('register'); setError('') }}
+            >
+              Create account
+            </button>
+          </div>
+
+          <p className="auth-kicker">{mode === 'login' ? 'Welcome back' : 'Get started'}</p>
+          <h2 id="auth-heading">
+            {mode === 'login' ? 'Sign in to VitaTwin' : 'Create your account'}
+          </h2>
+          <p className="auth-form-caption">
+            {mode === 'login'
+              ? 'Your wellness dashboard is ready when you are.'
+              : 'Start building a wellness profile that fits your life.'}
+          </p>
+
+          <form className="auth-form" onSubmit={handleSubmit}>
+            {mode === 'register' && (
+              <label>
+                Full name
+                <input name="full_name" type="text" autoComplete="name" required />
+              </label>
+            )}
+            <label>
+              Email address
+              <input name="email" type="email" autoComplete="email" required />
+            </label>
+            <label>
+              Password
+              <input
+                name="password"
+                type="password"
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                minLength={mode === 'register' ? 6 : undefined}
+                required
+              />
+            </label>
+            {error && <p className="auth-error" role="alert">{error}</p>}
+            <button type="submit" className="auth-submit" disabled={isSubmitting}>
+              {isSubmitting
+                ? 'Please wait...'
+                : mode === 'login' ? 'Sign in' : 'Create account'}
+              {!isSubmitting && <ArrowRight size={18} />}
+            </button>
+          </form>
+        </div>
+      </section>
     </div>
   )
 }
@@ -351,24 +399,6 @@ function MetricCard({
       <div className="metric-title">{title}</div>
       <div className="metric-value">{value}</div>
       <div className="metric-detail">{detail}</div>
-    </div>
-  )
-}
-
-function FeatureCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode
-  title: string
-  description: string
-}) {
-  return (
-    <div className="feature-card">
-      <div className="feature-icon">{icon}</div>
-      <h3>{title}</h3>
-      <p>{description}</p>
     </div>
   )
 }
