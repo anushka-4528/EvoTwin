@@ -19,7 +19,7 @@ async def lifespan(app: FastAPI):
 
 
 settings = get_settings()
-app = FastAPI(title="VitaTwin AI", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="EvoTwin", version="0.1.0", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -43,12 +43,12 @@ app.include_router(research.router, prefix=settings.api_prefix)
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "service": "VitaTwin AI"}
+    return {"status": "ok", "service": "EvoTwin"}
 
 
 @app.get("/api/health")
 async def api_health_check():
-    return {"status": "ok", "service": "VitaTwin AI API"}
+    return {"status": "ok", "service": "EvoTwin API"}
 
 
 @app.exception_handler(404)

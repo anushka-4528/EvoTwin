@@ -2,8 +2,8 @@ import logging
 import os
 from collections import defaultdict
 from typing import Any, Iterable
-import uuid
 
+from bson import ObjectId
 import mongomock
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -56,7 +56,7 @@ class AsyncInMemoryCollection:
 
     async def insert_one(self, document: dict[str, Any]):
         document = dict(document)
-        document.setdefault("_id", uuid.uuid4().hex)
+        document.setdefault("_id", ObjectId())
         self._documents().append(document)
         return type("InsertOneResult", (), {"inserted_id": document["_id"]})()
 
@@ -105,6 +105,10 @@ class AsyncInMemoryCollection:
                 remaining.append(doc)
         self._store[self._name] = remaining
         return type("DeleteResult", (), {"deleted_count": deleted})()
+
+    async def count_documents(self, query: dict[str, Any] | None = None):
+        query = query or {}
+        return sum(all(doc.get(key) == value for key, value in query.items()) for doc in self._documents())
 
     def find(self, query: dict[str, Any] | None = None):
         query = query or {}

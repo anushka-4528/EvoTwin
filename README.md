@@ -1,16 +1,16 @@
-# VitaTwin AI
+# EvoTwin
 
-VitaTwin AI is an educational wellness prototype built on an EvoHealthTwin-style framework for personalized health monitoring and predictive wellness.
+EvoTwin is an educational wellness app that helps people track daily well-being, remember their preferences, and get suggestions shaped around their goals and routines. It is a prototype, not a medical service.
 
 ## Features
 
-- Full-stack FastAPI + React application
-- JWT authentication and MongoDB-backed persistence
-- Digital Twin and hierarchical memory management
-- ACCM, RPE, and RAG pipeline stubs integrated into a demo-capable chat flow
-- Wellness scoring and synthetic ML prediction model
-- Demo fallback when Gemini or embeddings are not configured
-- Docker and local development option
+- Create an account and get guided through setting up your profile
+- Record sleep, activity, hydration, food choices, stress, and notes
+- Ask the assistant questions and see which personal details shaped its answer
+- Keep preferences for future suggestions and separate notes for today
+- Review progress, try different daily values, and update your profile
+- Download or delete your saved information
+- Use built-in example suggestions without connecting another AI service
 
 ## Local development
 
