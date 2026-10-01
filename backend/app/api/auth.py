@@ -130,6 +130,27 @@ async def complete_onboarding(payload: OnboardingComplete, current_user: Dict[st
     db = get_db()
     user_id = _user_object_id(current_user["user_id"])
     user_id_text = current_user["user_id"]
+    if payload.health_consent != "Yes":
+        payload = payload.model_copy(update={
+            "health_conditions": [],
+            "health_conditions_other": None,
+            "health_history": None,
+        })
+    if payload.health_measurements_consent != "Yes":
+        payload = payload.model_copy(update={
+            "blood_pressure_systolic": None,
+            "blood_pressure_diastolic": None,
+            "heart_rate": None,
+            "blood_glucose": None,
+        })
+    if payload.medications_status != "Yes":
+        payload = payload.model_copy(update={"medications_details": None})
+    if payload.gender != "Female" or payload.women_health_consent != "Yes":
+        payload = payload.model_copy(update={
+            "menstrual_cycle": None,
+            "women_health_conditions": [],
+            "women_health_conditions_other": None,
+        })
     onboarding_data = payload.model_dump()
     onboarding_data["activity_preferences"] = payload.preferred_activities
     onboarding_data["onboarding_completed"] = True
@@ -166,6 +187,10 @@ async def complete_onboarding(payload: OnboardingComplete, current_user: Dict[st
         {"$set": {"active": False, "updated_at": now}},
     )
     memory_items = [
+        {"category": "personal_information", "content": f"Name: {payload.full_name}"},
+        {"category": "personal_information", "content": f"Age: {payload.age}"},
+        {"category": "personal_information", "content": f"Gender: {payload.gender}"},
+    ] + [
         {"category": "goal", "content": goal}
         for goal in payload.goals
     ]
@@ -179,10 +204,49 @@ async def complete_onboarding(payload: OnboardingComplete, current_user: Dict[st
         )
         for value in values
     )
+    if payload.diet_type:
+        memory_items.append({"category": "dietary_preference", "content": payload.diet_type})
     if payload.activity_level:
         memory_items.append({"category": "activity_level", "content": payload.activity_level})
     if payload.sleep_hours is not None:
         memory_items.append({"category": "sleep_preference", "content": f"Typical sleep: {payload.sleep_hours} hours"})
+    if payload.sleep_quality:
+        memory_items.append({"category": "sleep_preference", "content": f"Typical sleep quality: {payload.sleep_quality}"})
+    if payload.diet_type:
+        memory_items.append({"category": "dietary_preference", "content": payload.diet_type})
+    memory_items.extend(
+        {"category": "health_condition", "content": value}
+        for value in payload.health_conditions
+        if value not in {"None", "Prefer not to say"}
+    )
+    if payload.health_conditions_other:
+        memory_items.append({"category": "health_condition", "content": payload.health_conditions_other})
+    memory_items.extend(
+        {"category": "allergy", "content": value}
+        for value in payload.allergies
+        if value not in {"None", "Prefer not to say"}
+    )
+    if payload.allergies_other:
+        memory_items.append({"category": "allergy", "content": payload.allergies_other})
+    if payload.medications_status == "Yes" and payload.medications_details:
+        memory_items.append({"category": "medication", "content": payload.medications_details})
+    for label, value in (
+        ("Systolic blood pressure", payload.blood_pressure_systolic),
+        ("Diastolic blood pressure", payload.blood_pressure_diastolic),
+        ("Heart rate", payload.heart_rate),
+        ("Blood glucose", payload.blood_glucose),
+    ):
+        if value is not None:
+            memory_items.append({"category": "health_measurement", "content": f"{label}: {value}"})
+    if payload.menstrual_cycle:
+        memory_items.append({"category": "women_health", "content": f"Menstrual cycle: {payload.menstrual_cycle}"})
+    memory_items.extend(
+        {"category": "women_health", "content": value}
+        for value in payload.women_health_conditions
+        if value not in {"None", "Prefer not to say"}
+    )
+    if payload.women_health_conditions_other:
+        memory_items.append({"category": "women_health", "content": payload.women_health_conditions_other})
     if payload.lifestyle_summary:
         memory_items.append({"category": "lifestyle", "content": payload.lifestyle_summary})
     await db.memories.insert_many([

@@ -21,12 +21,31 @@ class OnboardingComplete(BaseModel):
     gender: str = Field(min_length=1)
     goals: List[str] = Field(min_length=1)
     activity_level: str = Field(min_length=1)
-    lifestyle_summary: str = Field(min_length=1)
+    health_history: Optional[str] = None
+    lifestyle_summary: Optional[str] = None
     dietary_preferences: List[str]
     sleep_hours: float = Field(ge=0, le=24)
     exercise_preferences: List[str]
     preferred_activities: List[str]
     avoided_activities: List[str]
+    sleep_quality: Optional[str] = None
+    diet_type: Optional[str] = None
+    health_consent: Optional[str] = None
+    health_conditions: List[str] = Field(default_factory=list)
+    health_conditions_other: Optional[str] = None
+    health_measurements_consent: Optional[str] = None
+    blood_pressure_systolic: Optional[int] = Field(default=None, ge=0, le=300)
+    blood_pressure_diastolic: Optional[int] = Field(default=None, ge=0, le=200)
+    heart_rate: Optional[int] = Field(default=None, ge=0, le=300)
+    blood_glucose: Optional[float] = Field(default=None, ge=0)
+    allergies: List[str] = Field(default_factory=list)
+    allergies_other: Optional[str] = None
+    medications_status: Optional[str] = None
+    medications_details: Optional[str] = None
+    women_health_consent: Optional[str] = None
+    menstrual_cycle: Optional[str] = None
+    women_health_conditions: List[str] = Field(default_factory=list)
+    women_health_conditions_other: Optional[str] = None
 
 
 class PasswordChange(BaseModel):
@@ -49,6 +68,24 @@ class UserProfileUpdate(BaseModel):
     sleep_hours: Optional[float] = Field(default=None, ge=0, le=24)
     health_history: Optional[str] = None
     lifestyle_summary: Optional[str] = None
+    sleep_quality: Optional[str] = None
+    diet_type: Optional[str] = None
+    health_consent: Optional[str] = None
+    health_conditions: Optional[List[str]] = None
+    health_conditions_other: Optional[str] = None
+    health_measurements_consent: Optional[str] = None
+    blood_pressure_systolic: Optional[int] = Field(default=None, ge=0, le=300)
+    blood_pressure_diastolic: Optional[int] = Field(default=None, ge=0, le=200)
+    heart_rate: Optional[int] = Field(default=None, ge=0, le=300)
+    blood_glucose: Optional[float] = Field(default=None, ge=0)
+    allergies: Optional[List[str]] = None
+    allergies_other: Optional[str] = None
+    medications_status: Optional[str] = None
+    medications_details: Optional[str] = None
+    women_health_consent: Optional[str] = None
+    menstrual_cycle: Optional[str] = None
+    women_health_conditions: Optional[List[str]] = None
+    women_health_conditions_other: Optional[str] = None
 
 
 class UserOut(BaseModel):
@@ -68,6 +105,24 @@ class UserOut(BaseModel):
     sleep_hours: Optional[float] = None
     health_history: Optional[str] = None
     lifestyle_summary: Optional[str] = None
+    sleep_quality: Optional[str] = None
+    diet_type: Optional[str] = None
+    health_consent: Optional[str] = None
+    health_conditions: List[str] = []
+    health_conditions_other: Optional[str] = None
+    health_measurements_consent: Optional[str] = None
+    blood_pressure_systolic: Optional[int] = None
+    blood_pressure_diastolic: Optional[int] = None
+    heart_rate: Optional[int] = None
+    blood_glucose: Optional[float] = None
+    allergies: List[str] = []
+    allergies_other: Optional[str] = None
+    medications_status: Optional[str] = None
+    medications_details: Optional[str] = None
+    women_health_consent: Optional[str] = None
+    menstrual_cycle: Optional[str] = None
+    women_health_conditions: List[str] = []
+    women_health_conditions_other: Optional[str] = None
     onboarding_completed: bool = False
     created_at: datetime
 

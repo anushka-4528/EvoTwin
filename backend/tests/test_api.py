@@ -90,9 +90,21 @@ def test_full_digital_twin_onboarding_memory_and_feedback_flow():
         "lifestyle_summary": "Busy work and study schedule",
         "dietary_preferences": ["Vegetarian"],
         "sleep_hours": 7.5,
+        "sleep_quality": "Good",
+        "diet_type": "Vegetarian",
         "exercise_preferences": ["Cycling"],
         "preferred_activities": ["Walking"],
         "avoided_activities": ["Running"],
+        "health_consent": "Yes",
+        "health_conditions": ["Asthma"],
+        "health_measurements_consent": "Yes",
+        "blood_pressure_systolic": 118,
+        "blood_pressure_diastolic": 76,
+        "heart_rate": 68,
+        "blood_glucose": 92,
+        "allergies": ["Food allergy"],
+        "medications_status": "Yes",
+        "medications_details": "Daily medication",
     })
     assert onboarding.status_code == 200, onboarding.text
     assert onboarding.json()["onboarding_completed"] is True
@@ -102,6 +114,10 @@ def test_full_digital_twin_onboarding_memory_and_feedback_flow():
     twin_body = twin.json()
     assert twin_body["profile"]["activity_level"] == "moderate"
     assert any(memory["category"] == "preferred_activity" for memory in twin_body["long_term_memories"])
+    assert twin_body["profile"]["blood_pressure_systolic"] == 118
+    assert twin_body["profile"]["health_conditions"] == ["Asthma"]
+    memory_categories = {memory["category"] for memory in twin_body["long_term_memories"]}
+    assert {"personal_information", "health_condition", "health_measurement", "allergy", "medication"} <= memory_categories
 
     dashboard = client.get("/api/dashboard/summary", headers=headers)
     assert dashboard.status_code == 200, dashboard.text
@@ -151,3 +167,36 @@ def test_full_digital_twin_onboarding_memory_and_feedback_flow():
     assert password_change.status_code == 200, password_change.text
     login = client.post("/api/auth/login", json={"email": email, "password": "updated-secret"})
     assert login.status_code == 200, login.text
+
+    declined_health = client.post("/api/auth/onboarding", headers=headers, json={
+        "full_name": "Flow Test User",
+        "age": 29,
+        "gender": "Female",
+        "goals": ["Improve fitness"],
+        "activity_level": "moderate",
+        "dietary_preferences": [],
+        "sleep_hours": 8,
+        "exercise_preferences": [],
+        "preferred_activities": [],
+        "avoided_activities": [],
+        "health_consent": "No",
+        "health_conditions": ["Diabetes"],
+        "health_history": "Sensitive test value",
+        "health_measurements_consent": "No",
+        "blood_pressure_systolic": 122,
+        "heart_rate": 80,
+        "medications_status": "No",
+        "medications_details": "Sensitive medication value",
+        "women_health_consent": "No",
+        "menstrual_cycle": "Regular",
+        "women_health_conditions": ["PCOS"],
+    })
+    assert declined_health.status_code == 200, declined_health.text
+    assert declined_health.json()["health_conditions"] == []
+    assert declined_health.json()["health_history"] is None
+    assert declined_health.json()["blood_pressure_systolic"] is None
+    assert declined_health.json()["medications_details"] is None
+    assert declined_health.json()["menstrual_cycle"] is None
+    declined_twin = client.get("/api/twin", headers=headers).json()
+    active_categories = {memory["category"] for memory in declined_twin["long_term_memories"]}
+    assert not {"health_condition", "health_measurement", "women_health"} & active_categories
