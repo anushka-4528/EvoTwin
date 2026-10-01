@@ -4,8 +4,6 @@ import {
   ArrowRight,
   Clock3,
   Download,
-  Droplets,
-  Dumbbell,
   Gauge,
   HeartPulse,
   LogOut,
@@ -14,6 +12,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import './App.css'
+import { OnboardingWizard } from './OnboardingWizard'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard' },
@@ -36,7 +35,6 @@ async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T
   if (options.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
   }
-
   const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers })
   const body = await response.json().catch(() => null) as ApiErrorBody | null
   if (!response.ok) {
@@ -118,6 +116,24 @@ type UserProfile = {
   sleep_hours?: number | null
   health_history?: string | null
   lifestyle_summary?: string | null
+  sleep_quality?: string | null
+  diet_type?: string | null
+  health_consent?: string | null
+  health_conditions: string[]
+  health_conditions_other?: string | null
+  health_measurements_consent?: string | null
+  blood_pressure_systolic?: number | null
+  blood_pressure_diastolic?: number | null
+  heart_rate?: number | null
+  blood_glucose?: number | null
+  allergies: string[]
+  allergies_other?: string | null
+  medications_status?: string | null
+  medications_details?: string | null
+  women_health_consent?: string | null
+  menstrual_cycle?: string | null
+  women_health_conditions: string[]
+  women_health_conditions_other?: string | null
   onboarding_completed: boolean
 }
 type ProfileForm = {
@@ -250,7 +266,7 @@ function AuthenticatedApp({
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${location.pathname === '/onboarding' ? 'onboarding-app-shell' : ''}`}>
       <header className="topbar">
         <div className="topbar-inner">
           <div className="brand-wrap">
@@ -287,7 +303,7 @@ function AuthenticatedApp({
       <main className="main-content">
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/onboarding" element={<OnboardingPage currentUser={currentUser} onCompleted={onUserUpdated} />} />
+          <Route path="/onboarding" element={<OnboardingWizard currentUser={currentUser} onCompleted={onUserUpdated} />} />
           <Route path="/dashboard" element={<DashboardPage currentUser={currentUser} />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/health" element={<HealthPage />} />
@@ -299,7 +315,7 @@ function AuthenticatedApp({
       </main>
     </div>
   )
-}
+  }
 
 function AuthPage({ onAuthenticated }: { onAuthenticated: (token: string, user: UserProfile) => void }) {
   const [mode, setMode] = useState<'login' | 'register'>('login')
@@ -357,8 +373,20 @@ function AuthPage({ onAuthenticated }: { onAuthenticated: (token: string, user: 
         </div>
         <div className="auth-story-copy">
           <p className="auth-kicker">Your wellness, in context</p>
-          <h1>A healthier rhythm starts with understanding.</h1>
-          <p>Sign in to continue to your personal wellness companion.</p>
+          <h1>Your health. Your data. Your evolving Digital Twin.</h1>
+          <p>A personal picture of your wellbeing, shaped by what matters to you.</p>
+        </div>
+        <div className="auth-twin-visual" aria-hidden="true">
+          <div className="twin-constellation">
+            <span className="constellation-ring constellation-ring-outer" />
+            <span className="constellation-ring constellation-ring-inner" />
+            <span className="constellation-core"><HeartPulse size={25} /></span>
+            <span className="constellation-node constellation-node-sage"><i /></span>
+            <span className="constellation-node constellation-node-lavender"><i /></span>
+            <span className="constellation-node constellation-node-champagne"><i /></span>
+            <span className="constellation-node constellation-node-mint"><i /></span>
+          </div>
+          <span className="auth-visual-caption">A whole-person view, always evolving</span>
         </div>
         <div className="auth-story-footer">Private by design <span aria-hidden="true">·</span> Built around you</div>
       </aside>
@@ -428,188 +456,6 @@ function AuthPage({ onAuthenticated }: { onAuthenticated: (token: string, user: 
         </div>
       </section>
     </div>
-  )
-}
-
-function OnboardingPage({
-  currentUser,
-  onCompleted,
-}: {
-  currentUser: UserProfile
-  onCompleted: (user: UserProfile) => void
-}) {
-  const [form, setForm] = useState<ProfileForm>({
-    full_name: currentUser.full_name,
-    age: currentUser.age == null ? '' : String(currentUser.age),
-    gender: currentUser.gender ?? '',
-    occupation: currentUser.occupation ?? '',
-    activity_level: currentUser.activity_level ?? '',
-    goals: currentUser.goals.join(', '),
-    dietary_preferences: currentUser.dietary_preferences.join(', '),
-    activity_preferences: currentUser.activity_preferences.join(', '),
-    exercise_preferences: currentUser.exercise_preferences.join(', '),
-    preferred_activities: currentUser.preferred_activities.join(', '),
-    avoided_activities: currentUser.avoided_activities.join(', '),
-    sleep_hours: currentUser.sleep_hours == null ? '' : String(currentUser.sleep_hours),
-    health_history: currentUser.health_history ?? '',
-    lifestyle_summary: currentUser.lifestyle_summary ?? '',
-  })
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [otherFood, setOtherFood] = useState('')
-  const [otherExercise, setOtherExercise] = useState('')
-  const [otherPreferred, setOtherPreferred] = useState('')
-  const [otherAvoided, setOtherAvoided] = useState('')
-  const navigate = useNavigate()
-
-  const changeField = (field: keyof ProfileForm, value: string) => {
-    setForm((current) => ({ ...current, [field]: value }))
-  }
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setError('')
-    const noPreferenceAnswers = new Set(['none', 'n/a', 'not applicable', 'no preference', 'no preferences', 'no restrictions'])
-    const toList = (value: string) => value.split(',').map((item) => item.trim()).filter((item) => item && !noPreferenceAnswers.has(item.toLowerCase()))
-    const preferenceAnswers = [
-      { field: 'dietary_preferences', label: 'Food preferences', other: otherFood },
-      { field: 'exercise_preferences', label: 'Exercise preferences', other: otherExercise },
-      { field: 'preferred_activities', label: 'Activities you like', other: otherPreferred },
-      { field: 'avoided_activities', label: 'Activities you want to avoid', other: otherAvoided },
-    ] as const
-    for (const preference of preferenceAnswers) {
-      const value = form[preference.field]
-      if (!value.trim()) {
-        setError(`Choose an option for ${preference.label}, or select “None”.`)
-        return
-      }
-      if (value.split(',').some((item) => item.trim().toLowerCase() === 'other') && !preference.other.trim()) {
-        setError(`Add your “Other” ${preference.label.toLowerCase()} to continue.`)
-        return
-      }
-    }
-    const toPreferenceList = (value: string, other: string) => {
-      const values = toList(value)
-      const hasOther = values.some((item) => item.toLowerCase() === 'other')
-      return [...values.filter((item) => item.toLowerCase() !== 'other'), ...(hasOther ? [other.trim()] : [])]
-    }
-    setIsSaving(true)
-    try {
-      const updated = await apiRequest<UserProfile>('/auth/onboarding', {
-        method: 'POST',
-        body: JSON.stringify({
-          full_name: form.full_name.trim(),
-          age: Number(form.age),
-          gender: form.gender,
-          goals: toList(form.goals),
-          activity_level: form.activity_level,
-          lifestyle_summary: form.lifestyle_summary.trim(),
-          dietary_preferences: toPreferenceList(form.dietary_preferences, otherFood),
-          sleep_hours: form.sleep_hours === '' ? null : Number(form.sleep_hours),
-          exercise_preferences: toPreferenceList(form.exercise_preferences, otherExercise),
-          preferred_activities: toPreferenceList(form.preferred_activities, otherPreferred),
-          avoided_activities: toPreferenceList(form.avoided_activities, otherAvoided),
-        }),
-      })
-      onCompleted(updated)
-      navigate('/dashboard', { replace: true })
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Unable to save onboarding details.')
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  return (
-    <div className="onboarding-screen">
-      <div className="onboarding-heading">
-        <p className="panel-kicker">A few details · Set up your profile</p>
-        <h1>Make your wellness guide yours.</h1>
-        <p className="text-copy">Share what matters to you. EvoTwin uses it to tailor suggestions, and you can change it any time.</p>
-      </div>
-      <form className="panel onboarding-form" onSubmit={(event) => void handleSubmit(event)}>
-        <section className="onboarding-section">
-          <h2>About you</h2>
-          <div className="form-field-grid">
-            <label>Name<input value={form.full_name} onChange={(event) => changeField('full_name', event.target.value)} required /></label>
-            <label>Age<input type="number" min="0" max="120" value={form.age} onChange={(event) => changeField('age', event.target.value)} required /></label>
-            <label>Gender<input value={form.gender} onChange={(event) => changeField('gender', event.target.value)} placeholder="For example, woman, man, or non-binary" required /></label>
-            <label>Activity level<select value={form.activity_level} onChange={(event) => changeField('activity_level', event.target.value)} required>
-              <option value="">Choose a level</option><option value="low">Low</option><option value="moderate">Moderate</option><option value="high">High</option><option value="variable">Varies</option>
-            </select></label>
-            <label>Typical sleep (hours)<input type="number" min="0" max="24" step="0.1" value={form.sleep_hours} onChange={(event) => changeField('sleep_hours', event.target.value)} required /></label>
-            <ChoiceChips label="Food preferences" value={form.dietary_preferences} onChange={(value) => changeField('dietary_preferences', value)} options={['No restrictions', 'Vegetarian', 'Vegan', 'Dairy-free', 'Gluten-free', 'Halal', 'Kosher', 'Other', 'None']} />
-            {form.dietary_preferences.split(',').some((item) => item.trim() === 'Other') && <label className="other-choice-field">Other food preference<input value={otherFood} onChange={(event) => setOtherFood(event.target.value)} placeholder="Add your preference" required /></label>}
-          </div>
-        </section>
-        <section className="onboarding-section">
-          <h2>Goals and routine</h2>
-          <label>Health and well-being goals <span className="field-hint">Separate goals with commas</span><textarea rows={2} value={form.goals} onChange={(event) => changeField('goals', event.target.value)} placeholder="Improve fitness, sleep more consistently" required /></label>
-          <label>Lifestyle information<textarea rows={3} value={form.lifestyle_summary} onChange={(event) => changeField('lifestyle_summary', event.target.value)} placeholder="Schedule, responsibilities, or routines that affect your well-being" required /></label>
-          <ChoiceChips label="Exercise preferences" value={form.exercise_preferences} onChange={(value) => changeField('exercise_preferences', value)} options={['Walking', 'Running', 'Cycling', 'Swimming', 'Strength training', 'Yoga', 'Dance', 'Hiking', 'Other', 'None']} />
-          {form.exercise_preferences.split(',').some((item) => item.trim() === 'Other') && <label className="other-choice-field">Other exercise preference<input value={otherExercise} onChange={(event) => setOtherExercise(event.target.value)} placeholder="Add an activity" required /></label>}
-        </section>
-        <section className="onboarding-section">
-          <h2>Activities that fit you</h2>
-          <div className="form-field-grid">
-            <div>
-              <ChoiceChips label="Activities you like" value={form.preferred_activities} onChange={(value) => changeField('preferred_activities', value)} options={['Walking', 'Running', 'Cycling', 'Swimming', 'Strength training', 'Yoga', 'Dance', 'Hiking', 'Other', 'None']} />
-              {form.preferred_activities.split(',').some((item) => item.trim() === 'Other') && <label className="other-choice-field">Other activity you like<input value={otherPreferred} onChange={(event) => setOtherPreferred(event.target.value)} placeholder="Add an activity" required /></label>}
-            </div>
-            <div>
-              <ChoiceChips label="Activities you want to avoid" value={form.avoided_activities} onChange={(value) => changeField('avoided_activities', value)} options={['Walking', 'Running', 'Cycling', 'Swimming', 'Strength training', 'Yoga', 'Dance', 'Hiking', 'Other', 'None']} />
-              {form.avoided_activities.split(',').some((item) => item.trim() === 'Other') && <label className="other-choice-field">Other activity to avoid<input value={otherAvoided} onChange={(event) => setOtherAvoided(event.target.value)} placeholder="Add an activity" required /></label>}
-            </div>
-          </div>
-        </section>
-        {error && <p className="feedback-message feedback-error" role="alert">{error}</p>}
-        <button type="submit" className="primary-btn" disabled={isSaving}>{isSaving ? 'Saving your details…' : 'Finish setup'} <ArrowRight size={17} /></button>
-      </form>
-    </div>
-  )
-}
-
-function ChoiceChips({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string
-  value: string
-  options: string[]
-  onChange: (value: string) => void
-}) {
-  const selected = value.split(',').map((item) => item.trim()).filter(Boolean)
-
-  const toggleOption = (option: string) => {
-    if (option === 'None') {
-      onChange(selected.includes('None') ? '' : 'None')
-      return
-    }
-    const otherOptions = selected.filter((item) => item !== 'None')
-    onChange(otherOptions.includes(option)
-      ? otherOptions.filter((item) => item !== option).join(', ')
-      : [...otherOptions, option].join(', '))
-  }
-
-  return (
-    <fieldset className="choice-field">
-      <legend>{label}</legend>
-      <div className="choice-chips">
-        {options.map((option) => (
-          <button
-            type="button"
-            className={`choice-chip ${selected.includes(option) ? 'choice-chip-selected' : ''}`}
-            aria-pressed={selected.includes(option)}
-            key={option}
-            onClick={() => toggleOption(option)}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
-    </fieldset>
   )
 }
 
@@ -1594,27 +1440,6 @@ function SettingsPage({ onSignOut }: { onSignOut: () => void }) {
         </div>
       </div>
       {feedback && <p className={`feedback-message ${feedbackIsError ? 'feedback-error' : 'feedback-success'}`} role={feedbackIsError ? 'alert' : 'status'}>{feedback}</p>}
-    </div>
-  )
-}
-
-function MetricCard({
-  icon,
-  title,
-  value,
-  detail,
-}: {
-  icon: React.ReactNode
-  title: string
-  value: string
-  detail: string
-}) {
-  return (
-    <div className="metric-card">
-      <div className="metric-icon">{icon}</div>
-      <div className="metric-title">{title}</div>
-      <div className="metric-value">{value}</div>
-      <div className="metric-detail">{detail}</div>
     </div>
   )
 }

@@ -1,11 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
+  --color-ivory: #F8F6F1;
+  --color-paper: #FFFEFC;
+  --color-forest: #173F3A;
+  --color-sage: #8FB7A8;
+  --color-mint: #DCEDE6;
+  --color-lavender: #D8D4E8;
+  --color-champagne: #E8D7B5;
+  --color-muted: #687B75;
   font-family: 'Inter', system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #0f172a;
-  background: #f8fafc;
+  color: var(--color-forest);
+  background: var(--color-ivory);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -18,7 +26,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
+  background: var(--color-ivory);
 }
 
 a { text-decoration: none; }
